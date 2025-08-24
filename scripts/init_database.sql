@@ -3,29 +3,40 @@
 Create Database and Schemas
 =============================================================
 Script Purpose:
-    This script creates a new database named 'StatsBombDWH' after checking if it already exists. 
+    This script creates a new database named 'StatsbombDWH' after checking if it already exists. 
     If the database exists, it is dropped and recreated. Additionally, the script sets up three schemas 
     within the database: 'bronze', 'silver', and 'gold'.
 	
 WARNING:
-    Running this script will drop the entire 'StatsBombDWH' database if it exists. 
+    Running this script will drop the entire 'StatsbombDWH' database if it exists. 
     All data in the database will be permanently deleted. Proceed with caution 
     and ensure you have proper backups before running this script.
 */
-IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'StatsBombDWH')
+
+USE master;
+GO
+
+-- Drop and recreate the 'StatsbombDWH' database
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'StatsbombDWH')
 BEGIN
-    ALTER DATABASE StatsBombDWH SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE StatsBombDWH;  
+    ALTER DATABASE StatsbombDWH SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE StatsbombDWH;
 END;
 GO
 
--- Create the 'StatsBombDWH' database 
-CREATE DATABASE StatsBombDWH;  
+-- Create the 'StatsbombDWH' database
+CREATE DATABASE StatsbombDWH;
 GO
-USE StatsBombDWH;
-GO  
-CREATE SCHEMA bronze; -- raw landing
-CREATE SCHEMA silver; -- cleaned & normalized
-CREATE SCHEMA gold;   -- analytics/star schema
-CREATE SCHEMA logs;   -- ETL logs & audits
+
+USE StatsbombDWH;
+GO
+
+-- Create Schemas
+CREATE SCHEMA bronze;
+GO
+
+CREATE SCHEMA silver;
+GO
+
+CREATE SCHEMA gold;
 GO
