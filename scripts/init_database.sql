@@ -37,6 +37,7 @@ GO
 
 -- Create Schemas
 PRINT '🏗️ Creating schemas (bronze, silver, gold)...';
+GO
 CREATE SCHEMA bronze;
 GO
 
