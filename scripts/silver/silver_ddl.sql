@@ -2,23 +2,21 @@ USE StatsbombDWH;
 GO
 
 /********************************************************************************************
-  1. Drop Existing Tables (Order matters due to Foreign Keys)
+  🧹 1. Drop Existing Tables (Nested & Core) — Order matters due to FK dependencies
 ********************************************************************************************/
-IF OBJECT_ID('StatsbombDWH.silver.fact_events', 'U') IS NOT NULL
-    DROP TABLE StatsbombDWH.silver.fact_events;
-IF OBJECT_ID('StatsbombDWH.silver.dim_matches', 'U') IS NOT NULL
-    DROP TABLE StatsbombDWH.silver.dim_matches;
-IF OBJECT_ID('StatsbombDWH.silver.dim_competitions', 'U') IS NOT NULL
-    DROP TABLE StatsbombDWH.silver.dim_competitions;
+IF OBJECT_ID('silver.fact_related_events', 'U') IS NOT NULL DROP TABLE silver.fact_related_events;
+IF OBJECT_ID('silver.fact_shot_freeze_frame', 'U') IS NOT NULL DROP TABLE silver.fact_shot_freeze_frame;
+IF OBJECT_ID('silver.fact_tactics_lineup', 'U') IS NOT NULL DROP TABLE silver.fact_tactics_lineup;
+IF OBJECT_ID('silver.fact_event_locations', 'U') IS NOT NULL DROP TABLE silver.fact_event_locations;
+IF OBJECT_ID('silver.fact_events', 'U') IS NOT NULL DROP TABLE silver.fact_events;
+IF OBJECT_ID('silver.dim_matches', 'U') IS NOT NULL DROP TABLE silver.dim_matches;
+IF OBJECT_ID('silver.dim_competitions', 'U') IS NOT NULL DROP TABLE silver.dim_competitions;
 GO
 
--- ============================================================
--- 1️⃣ Create silver.dim_competitions
--- ============================================================
-IF OBJECT_ID('silver.dim_competitions', 'U') IS NOT NULL
-    DROP TABLE silver.dim_competitions;
-GO
 
+/********************************************************************************************
+  2️⃣ silver.dim_competitions
+********************************************************************************************/
 CREATE TABLE silver.dim_competitions (
     competition_id INT NOT NULL,
     season_id INT NOT NULL,
@@ -37,13 +35,9 @@ CREATE TABLE silver.dim_competitions (
 GO
 
 
--- ============================================================
--- 2️⃣ Create silver.dim_matches
--- ============================================================
-IF OBJECT_ID('silver.dim_matches', 'U') IS NOT NULL
-    DROP TABLE silver.dim_matches;
-GO
-
+/********************************************************************************************
+  3️⃣ silver.dim_matches
+********************************************************************************************/
 CREATE TABLE silver.dim_matches (
     match_id INT NOT NULL PRIMARY KEY,
     match_date NVARCHAR(50) NULL,
@@ -94,13 +88,9 @@ CREATE TABLE silver.dim_matches (
 GO
 
 
--- ============================================================
--- 3️⃣ Create silver.fact_events
--- ============================================================
-IF OBJECT_ID('silver.fact_events', 'U') IS NOT NULL
-    DROP TABLE silver.fact_events;
-GO
-
+/********************************************************************************************
+  4️⃣ silver.fact_events
+********************************************************************************************/
 CREATE TABLE silver.fact_events (
     id NVARCHAR(100) NOT NULL PRIMARY KEY,
     match_id INT NULL,
@@ -231,7 +221,82 @@ CREATE TABLE silver.fact_events (
     shot_first_time FLOAT NULL,
     shot_one_on_one FLOAT NULL,
     carry_end_location NVARCHAR(100) NULL,
+	foul_won_penalty FLOAT NULL
+      ,ball_recovery_offensive FLOAT NULL
+      ,block_save_block FLOAT NULL
     CONSTRAINT FK_fact_events_matches FOREIGN KEY (match_id)
         REFERENCES silver.dim_matches (match_id)
 );
 GO
+
+
+/********************************************************************************************
+  5️⃣ silver.fact_related_events
+********************************************************************************************/
+CREATE TABLE silver.fact_related_events (
+    event_id NVARCHAR(100) NOT NULL,
+    related_event_id NVARCHAR(100) NOT NULL,
+    match_id INT NULL,
+    season_id INT NULL,
+    CONSTRAINT FK_related_events_fact FOREIGN KEY (event_id)
+        REFERENCES silver.fact_events (id)
+);
+GO
+
+
+/********************************************************************************************
+  6️⃣ silver.fact_shot_freeze_frame
+********************************************************************************************/
+CREATE TABLE silver.fact_shot_freeze_frame (
+    event_id NVARCHAR(100) NOT NULL,
+    match_id INT NULL,
+    season_id INT NULL,
+    player_id INT NULL,
+    player_name NVARCHAR(255) NULL,
+    position_name NVARCHAR(100) NULL,
+    teammate BIT NULL,
+    location_x FLOAT NULL,
+    location_y FLOAT NULL,
+    CONSTRAINT FK_freeze_frame_event FOREIGN KEY (event_id)
+        REFERENCES silver.fact_events (id)
+);
+GO
+
+
+/********************************************************************************************
+  7️⃣ silver.fact_tactics_lineup
+********************************************************************************************/
+CREATE TABLE silver.fact_tactics_lineup (
+    event_id NVARCHAR(100) NOT NULL,
+    match_id INT NULL,
+    season_id INT NULL,
+    tactics_formation NVARCHAR(50) NULL,
+    player_id INT NULL,
+    player_name NVARCHAR(255) NULL,
+    position_id INT NULL,
+    position_name NVARCHAR(100) NULL,
+    jersey_number INT NULL,
+    CONSTRAINT FK_tactics_event FOREIGN KEY (event_id)
+        REFERENCES silver.fact_events (id)
+);
+GO
+
+
+/********************************************************************************************
+  8️⃣ silver.fact_event_locations
+********************************************************************************************/
+CREATE TABLE silver.fact_event_locations (
+    event_id NVARCHAR(100) NOT NULL,
+    match_id INT NULL,
+    season_id INT NULL,
+    location_x FLOAT NULL,
+    location_y FLOAT NULL,
+    pass_end_x FLOAT NULL,
+    pass_end_y FLOAT NULL,
+    carry_end_x FLOAT NULL,
+    carry_end_y FLOAT NULL,
+    CONSTRAINT FK_event_locations FOREIGN KEY (event_id)
+        REFERENCES silver.fact_events (id)
+);
+GO
+
